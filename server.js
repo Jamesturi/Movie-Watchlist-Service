@@ -1,65 +1,49 @@
+// server.js
+
+require('dotenv').config();
 const express = require('express');
-const dotenv = require('dotenv');
 const cors = require('cors');
-const connectDB = require('./config/db');
+const mongoose = require('mongoose');
 
-// Load environment variables
-dotenv.config();
-
-// Connect to database
-connectDB();
-
-// Initialize Express
 const app = express();
 
 // Middleware
-app.use(express.json()); // Parse JSON bodies
+app.use(cors());
+app.use(express.json());
 
-// Development CORS configuration
-const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? 'https://yourdomain.com' // Production domain
-    : 'http://localhost:3000',  // Development domain
-  credentials: true,
-  optionsSuccessStatus: 200
-};
+// MongoDB connection
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log('✅ Connected to MongoDB'))
+  .catch((err) => console.error('❌ MongoDB connection error:', err));
 
-// // Production CORS with multiple allowed origins
-// const allowedOrigins = [
-//   'https://yourdomain.com',
-//   'https://www.yourdomain.com',
-//   'https://admin.yourdomain.com'
-// ];
-
-// const corsOptions = {
-//   origin: function (origin, callback) {
-//     // Allow requests with no origin (like mobile apps, curl, etc.)
-//     if (!origin) return callback(null, true);
-    
-//     if (allowedOrigins.indexOf(origin) !== -1) {
-//       callback(null, true); // Origin allowed
-//     } else {
-//       callback(new Error('Not allowed by CORS')); // Origin not allowed
-//     }
-//   },
-//   credentials: true,
-//   optionsSuccessStatus: 200
-// };
-
-// app.use(cors(corsOptions));
-
-app.use(cors(corsOptions));
-
-// // Enable CORS for all routes
-// app.use(cors());
-
-// Routes
-app.get('/', (req, res) => {
-  res.send('Movie Watchlist API is running');
+// Health‐check endpoint (useful for Model A testing)
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok' });
 });
 
-// Listen on specified port
+// Movies endpoint for Model B’s MovieList component
+app.get('/api/movies', async (_req, res) => {
+  try {
+    // If you have a Movie model, you could fetch from MongoDB:
+    // const movies = await Movie.find();
+    // For now, return a static list:
+    const movies = [
+      { id: 1, title: 'The Shawshank Redemption' },
+      { id: 2, title: 'Inception' },
+      { id: 3, title: 'Interstellar' },
+    ];
+    res.json(movies);
+  } catch (err) {
+    console.error('Error fetching movies:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
