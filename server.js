@@ -1,53 +1,49 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const connectDB = require('./config/db');
-const errorHandler = require('./middlewares/error');
+const dotenv = require('dotenv');
+const mongoose = require('mongoose');
 
-// Route imports
-// const userRoutes = require('./routes/userRoutes');
-// const movieRoutes = require('./routes/movieRoutes');
-// const watchlistRoutes = require('./routes/watchlistRoutes');
+// Load environment variables
+dotenv.config();
 
 // Initialize Express app
 const app = express();
 
 // Connect to MongoDB
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+    console.log('MongoDB connected successfully');
+  } catch (error) {
+    console.error('MongoDB connection error:', error.message);
+    // Exit process with failure
+    process.exit(1);
+  }
+};
+
 connectDB();
 
-// Middleware
-app.use(express.json());
+// Initialize middleware
+app.use(express.json());               // Body parser for JSON data
+app.use(express.urlencoded({ extended: false })); // Body parser for URL-encoded data
+app.use(cors());                       // Enable CORS for all routes
 
-// CORS configuration
-const corsOptions = {
-  origin: process.env.NODE_ENV === 'production'
-    ? 'https://yourdomain.com' // Production domain
-    : 'http://localhost:3000',  // Development domain
-  credentials: true,
-  optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
-
-// API routes
-// app.use('/api/users', userRoutes);
-// app.use('/api/movies', movieRoutes);
-// app.use('/api/watchlists', watchlistRoutes);
-// Add this to your existing server.js file
+// Import routes
 const authRoutes = require('./routes/authRoutes');
 
-// Register the auth routes
+// Mount routes
 app.use('/api/auth', authRoutes);
 
-// Base route
+// Basic route for testing
 app.get('/', (req, res) => {
   res.send('Movie Watchlist API is running');
 });
 
-// Error handling middleware
-app.use(errorHandler);
-
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
