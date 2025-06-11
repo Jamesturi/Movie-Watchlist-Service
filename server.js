@@ -5,9 +5,9 @@ const connectDB = require('./config/db');
 const errorHandler = require('./middlewares/error');
 
 // Route imports
-const userRoutes = require('./routes/userRoutes');
-const movieRoutes = require('./routes/movieRoutes');
-const watchlistRoutes = require('./routes/watchlistRoutes');
+// const userRoutes = require('./routes/userRoutes');
+// const movieRoutes = require('./routes/movieRoutes');
+// const watchlistRoutes = require('./routes/watchlistRoutes');
 
 // Initialize Express app
 const app = express();
@@ -29,9 +29,14 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // API routes
-app.use('/api/users', userRoutes);
-app.use('/api/movies', movieRoutes);
-app.use('/api/watchlists', watchlistRoutes);
+// app.use('/api/users', userRoutes);
+// app.use('/api/movies', movieRoutes);
+// app.use('/api/watchlists', watchlistRoutes);
+// Add this to your existing server.js file
+const authRoutes = require('./routes/authRoutes');
+
+// Register the auth routes
+app.use('/api/auth', authRoutes);
 
 // Base route
 app.get('/', (req, res) => {
