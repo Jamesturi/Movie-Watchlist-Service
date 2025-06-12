@@ -1,6 +1,15 @@
-import React, { createContext, useReducer, useCallback, useMemo, useEffect } from 'react';
+// client/src/context/AuthContext.js
+
+import React, {
+  createContext,
+  useReducer,
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef
+} from 'react';
 import api from '../utils/api';
-import { jwtDecode } from 'jwt-decode';   // ← use named import here
+import { jwtDecode } from 'jwt-decode';  // named import
 
 const AuthContext = createContext();
 
@@ -12,7 +21,8 @@ const initialState = {
   error: null,
 };
 
-const isValidToken = (token) => {
+// Validate JWT expiry
+const isValidToken = token => {
   if (!token) return false;
   try {
     const decoded = jwtDecode(token);
@@ -25,7 +35,12 @@ const isValidToken = (token) => {
 const authReducer = (state, action) => {
   switch (action.type) {
     case 'USER_LOADED':
-      return { ...state, user: action.payload, isAuthenticated: true, loading: false };
+      return {
+        ...state,
+        user: action.payload,
+        isAuthenticated: true,
+        loading: false
+      };
     case 'AUTH_SUCCESS':
       localStorage.setItem('token', action.payload.token);
       return {
@@ -34,16 +49,30 @@ const authReducer = (state, action) => {
         token: action.payload.token,
         isAuthenticated: true,
         loading: false,
-        error: null,
+        error: null
       };
     case 'AUTH_ERROR':
     case 'LOGIN_FAIL':
     case 'REGISTER_FAIL':
       localStorage.removeItem('token');
-      return { ...state, token: null, isAuthenticated: false, loading: false, user: null, error: action.payload };
+      return {
+        ...state,
+        token: null,
+        isAuthenticated: false,
+        loading: false,
+        user: null,
+        error: action.payload
+      };
     case 'LOGOUT':
       localStorage.removeItem('token');
-      return { ...state, token: null, isAuthenticated: false, loading: false, user: null, error: null };
+      return {
+        ...state,
+        token: null,
+        isAuthenticated: false,
+        loading: false,
+        user: null,
+        error: null
+      };
     case 'CLEAR_ERROR':
       return { ...state, error: null };
     default:
@@ -53,7 +82,9 @@ const authReducer = (state, action) => {
 
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const authInterceptorId = useRef(null);
 
+  // Load user if token is valid
   const loadUser = useCallback(async () => {
     try {
       const res = await api.get('/auth/me');
@@ -61,20 +92,45 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       dispatch({
         type: 'AUTH_ERROR',
-        payload: err.response?.data?.message || 'Authentication Error',
+        payload: err.response?.data?.message || 'Authentication Error'
       });
     }
   }, []);
 
+  // On mount or token change: validate & load user, setup interceptor
   useEffect(() => {
+    // JWT validity check
     if (state.token && isValidToken(state.token)) {
       loadUser();
     } else {
       dispatch({ type: 'AUTH_ERROR', payload: 'Invalid or expired token' });
     }
-  }, [loadUser, state.token]);
 
-  const register = useCallback(async (userData) => {
+    // Eject old interceptor if any
+    if (authInterceptorId.current !== null) {
+      api.interceptors.request.eject(authInterceptorId.current);
+    }
+
+    // Add new interceptor for attaching token
+    if (state.token) {
+      authInterceptorId.current = api.interceptors.request.use(
+        config => {
+          config.headers.Authorization = `Bearer ${state.token}`;
+          return config;
+        },
+        error => Promise.reject(error)
+      );
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (authInterceptorId.current !== null) {
+        api.interceptors.request.eject(authInterceptorId.current);
+      }
+    };
+  }, [state.token, loadUser]);
+
+  const register = useCallback(async userData => {
     try {
       const res = await api.post('/auth/register', userData);
       dispatch({ type: 'AUTH_SUCCESS', payload: res.data.data });
@@ -82,13 +138,13 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       dispatch({
         type: 'REGISTER_FAIL',
-        payload: err.response?.data?.message || 'Registration failed',
+        payload: err.response?.data?.message || 'Registration failed'
       });
       throw err;
     }
   }, []);
 
-  const login = useCallback(async (userData) => {
+  const login = useCallback(async userData => {
     try {
       const res = await api.post('/auth/login', userData);
       dispatch({ type: 'AUTH_SUCCESS', payload: res.data.data });
@@ -96,14 +152,41 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       dispatch({
         type: 'LOGIN_FAIL',
-        payload: err.response?.data?.message || 'Login failed',
+        payload: err.response?.data?.message || 'Login failed'
       });
       throw err;
     }
   }, []);
 
-  const logout = useCallback(() => dispatch({ type: 'LOGOUT' }), []);
-  const clearError = useCallback(() => dispatch({ type: 'CLEAR_ERROR' }), []);
+  const logout = useCallback(() => {
+    // 1. Remove token
+    localStorage.removeItem('token');
+
+    // 2. Notify backend (optional)
+    if (window.navigator.onLine) {
+      api
+        .post('/auth/logout', {}, { timeout: 1000 })
+        .catch(() =>
+          console.log('Backend logout notification failed — continuing local logout')
+        );
+    }
+
+    // 3. Eject interceptor
+    if (authInterceptorId.current !== null) {
+      api.interceptors.request.eject(authInterceptorId.current);
+      authInterceptorId.current = null;
+    }
+
+    // 4. Dispatch logout
+    dispatch({ type: 'LOGOUT' });
+
+    // 5. (Optional) Clear any API cache, e.g., react-query
+    // queryClient.clear();
+  }, []);
+
+  const clearError = useCallback(() => {
+    dispatch({ type: 'CLEAR_ERROR' });
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -115,7 +198,7 @@ export const AuthProvider = ({ children }) => {
       register,
       login,
       logout,
-      clearError,
+      clearError
     }),
     [state, register, login, logout, clearError]
   );
@@ -125,6 +208,6 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = React.useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };
