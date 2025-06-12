@@ -2,6 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
+// Import movie routes
+const movieRoutes = require('./routes/movieRoutes');
+
+
 
 // Load environment variables
 dotenv.config();
@@ -36,6 +40,9 @@ const authRoutes = require('./routes/authRoutes');
 
 // Mount routes
 app.use('/api/auth', authRoutes);
+// Mount API routes
+app.use('/api/auth', authRoutes);
+app.use('/api/movies', movieRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {
