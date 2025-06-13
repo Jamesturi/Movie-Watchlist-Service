@@ -1,6 +1,6 @@
 const Movie = require('../models/Movie');
 
-// Controller to add a new movie to the watchlist
+// Controller to add a new movie to the watchlist (existing code)
 exports.addMovie = async (req, res) => {
   try {
     const { title, year, watched = false } = req.body;
@@ -36,11 +36,10 @@ exports.addMovie = async (req, res) => {
   }
 };
 
-
-// Get all movies for the authenticated user
+// Get all movies for the authenticated user (existing code)
 exports.getMovies = async (req, res) => {
   try {
-    // Find all movies that belong to the authenticated user
+    // Find all movies associated with the logged-in user
     const movies = await Movie.find({ user: req.user.id }).sort({ createdAt: -1 });
     
     res.status(200).json({
@@ -50,6 +49,35 @@ exports.getMovies = async (req, res) => {
     });
   } catch (error) {
     console.error('Error retrieving movies:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Server Error'
+    });
+  }
+};
+
+// Get a specific movie by ID (new code)
+exports.getMovieById = async (req, res) => {
+  try {
+    const movie = await Movie.findOne({
+      _id: req.params.id,
+      user: req.user.id  // Enforce ownership - only return if it belongs to this user
+    });
+    
+    // Check if movie exists
+    if (!movie) {
+      return res.status(404).json({
+        success: false,
+        error: 'Movie not found'
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: movie
+    });
+  } catch (error) {
+    console.error('Error retrieving movie:', error.message);
     res.status(500).json({
       success: false,
       error: 'Server Error'

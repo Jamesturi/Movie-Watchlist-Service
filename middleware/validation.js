@@ -1,6 +1,7 @@
 const Joi = require('joi');
+const mongoose = require('mongoose');
 
-// Movie validation schema
+// Movie validation schema (existing code)
 const movieSchema = Joi.object({
   title: Joi.string().trim().required().messages({
     'string.empty': 'Movie title is required',
@@ -27,4 +28,15 @@ const validateMovie = (req, res, next) => {
   next();
 };
 
-module.exports = { validateMovie };
+// Validate MongoDB ObjectID
+const validateObjectId = (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid ID format'
+    });
+  }
+  next();
+};
+
+module.exports = { validateMovie, validateObjectId };
