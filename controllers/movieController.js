@@ -32,14 +32,44 @@ exports.addMovie = async (req, res, next) => {
   }
 };
 
-// Get all movies for the authenticated user
+// controllers/movieController.js (updated getMovies function)
 exports.getMovies = async (req, res, next) => {
   try {
-    const movies = await Movie.find({ user: req.user.id }).sort({ createdAt: -1 });
+    const { 
+      year, 
+      watched, 
+      title, 
+      sort = '-createdAt', 
+      page = 1, 
+      limit = 20 
+    } = req.query;
+    
+    // Build query filter
+    const filter = { user: req.user.id };
+    
+    // Add optional filters if provided
+    if (year !== undefined) filter.year = year;
+    if (watched !== undefined) filter.watched = watched;
+    if (title !== undefined) filter.title = { $regex: title, $options: 'i' }; // Case-insensitive search
+    
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+    
+    // Execute query with filters and pagination
+    const movies = await Movie.find(filter)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit);
+    
+    // Get total count for pagination
+    const totalCount = await Movie.countDocuments(filter);
     
     res.status(200).json({
       success: true,
       count: movies.length,
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
       data: movies
     });
   } catch (error) {

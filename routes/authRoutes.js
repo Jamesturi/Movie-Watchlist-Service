@@ -2,12 +2,25 @@ const express = require('express');
 const router = express.Router();
 const { register, login } = require('../controllers/authController');
 const auth = require('../middleware/auth');
+const {validateRequest} = require('../middleware/validation');
+const { 
+  userRegistrationSchema, 
+  userLoginSchema 
+} = require('../middleware/validationSchemas');
 
-// Register route
-router.post('/register', register);
 
-// Login route
-router.post('/login', login);
+// // Register route
+// router.post('/register', register);
+
+// // Login route
+// router.post('/login', login);
+
+
+// Register new user
+router.post('/register', validateRequest(userRegistrationSchema), register);
+
+// Login user
+router.post('/login', validateRequest(userLoginSchema), login);
 
 // Protected route to test auth middleware
 router.get('/me', auth, async (req, res) => {
