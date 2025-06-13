@@ -1,3 +1,4 @@
+// models/Movie.js (updated)
 const mongoose = require('mongoose');
 
 const movieSchema = new mongoose.Schema({
@@ -8,12 +9,8 @@ const movieSchema = new mongoose.Schema({
   },
   year: {
     type: Number,
-    validate: {
-      validator: function(value) {
-        return !value || (value > 1888 && value <= new Date().getFullYear());
-      },
-      message: props => `${props.value} is not a valid release year!`
-    }
+    required: [true, 'Release year is required'],
+    min: [1888, 'Year must be at least 1888']
   },
   watched: {
     type: Boolean,
@@ -24,7 +21,11 @@ const movieSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   }
-}, { timestamps: true });
+}, { 
+  timestamps: true,
+  // Enable optimistic concurrency control
+  optimisticConcurrency: true
+});
 
 const Movie = mongoose.model('Movie', movieSchema);
 

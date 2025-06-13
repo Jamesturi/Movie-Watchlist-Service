@@ -84,3 +84,70 @@ exports.getMovieById = async (req, res) => {
     });
   }
 };
+
+
+// controllers/movieController.js
+// Update a movie
+// Improved updateMovie controller with versioning
+exports.updateMovie = async (req, res) => {
+  try {
+    const { title, year, watched } = req.body;
+    
+    // First fetch the movie with its current version
+    const currentMovie = await Movie.findOne({
+      _id: req.params.id,
+      user: req.user.id
+    });
+    
+    if (!currentMovie) {
+      return res.status(404).json({
+        success: false,
+        error: 'Movie not found'
+      });
+    }
+    
+    // Update with version check
+    const movie = await Movie.findOneAndUpdate(
+      { 
+        _id: req.params.id,
+        user: req.user.id,
+        __v: currentMovie.__v // Ensure version match
+      },
+      { 
+        $set: { title, year, watched }
+      },
+      { 
+        new: true,
+        runValidators: true
+      }
+    );
+    
+    // If movie is null, it means the version changed during our operation
+    if (!movie) {
+      return res.status(409).json({
+        success: false,
+        error: 'Conflict: The movie was modified by another request'
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: movie
+    });
+  } catch (error) {
+    // Error handling same as before
+    console.error('Error updating movie:', error.message);
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        error: Object.values(error.errors).map(val => val.message).join(', ')
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server Error'
+    });
+  }
+};

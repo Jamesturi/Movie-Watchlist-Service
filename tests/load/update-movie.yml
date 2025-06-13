@@ -1,0 +1,36 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      rampTo: 50
+      name: "Warming up the API"
+    - duration: 120
+      arrivalRate: 50
+      name: "Sustained high load"
+  payload:
+    path: "movie_ids.csv"
+    fields:
+      - "id"
+    order: "sequence"
+  defaults:
+    headers:
+      Authorization: "Bearer {{$processEnvironment.JWT_TOKEN}}"
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Update movie watched status"
+    flow:
+      - put:
+          url: "/api/movies/{{id}}"
+          json:
+            watched: true
+          capture:
+            - json: "$.success"
+              as: "success"
+          expect:
+            - statusCode: 200
+            - contentType: "application/json"
+            - equals:
+                - "{{ success }}"
+                - true
