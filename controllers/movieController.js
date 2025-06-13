@@ -1,7 +1,14 @@
+// controllers/movieController.js (using new error handling)
 const Movie = require('../models/Movie');
+const { 
+  BadRequestError, 
+  NotFoundError, 
+  ConflictError, 
+  InternalServerError 
+} = require('../utils/errorHandler');
 
-// Controller to add a new movie to the watchlist (existing code)
-exports.addMovie = async (req, res) => {
+// Controller to add a new movie to the watchlist
+exports.addMovie = async (req, res, next) => {
   try {
     const { title, year, watched = false } = req.body;
     
@@ -10,7 +17,7 @@ exports.addMovie = async (req, res) => {
       title,
       year,
       watched,
-      user: req.user.id // This comes from our auth middleware
+      user: req.user.id
     });
     
     const savedMovie = await movie.save();
@@ -20,26 +27,14 @@ exports.addMovie = async (req, res) => {
       data: savedMovie
     });
   } catch (error) {
-    console.error('Error adding movie:', error.message);
-    
-    // Handle mongoose validation errors differently
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        error: Object.values(error.errors).map(val => val.message).join(', ')
-      });
-    }
-    
-    res.status(500).json({
-      success: false,
-      error: 'Server Error'
-    });
+    // Let the global handler process Mongoose validation errors
+    next(error);
   }
 };
 
-// Get all movies for the authenticated user (existing code)
-exports.getMovies = async (req, res) => {
+// Get all movies for the authenticated user
+exports.getMovies = async (req, res, next) => {
   try {
-    // Find all movies associated with the logged-in user
     const movies = await Movie.find({ user: req.user.id }).sort({ createdAt: -1 });
     
     res.status(200).json({
@@ -48,28 +43,20 @@ exports.getMovies = async (req, res) => {
       data: movies
     });
   } catch (error) {
-    console.error('Error retrieving movies:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Server Error'
-    });
+    next(error);
   }
 };
 
-// Get a specific movie by ID (new code)
-exports.getMovieById = async (req, res) => {
+// Get a specific movie by ID
+exports.getMovieById = async (req, res, next) => {
   try {
     const movie = await Movie.findOne({
       _id: req.params.id,
-      user: req.user.id  // Enforce ownership - only return if it belongs to this user
+      user: req.user.id
     });
     
-    // Check if movie exists
     if (!movie) {
-      return res.status(404).json({
-        success: false,
-        error: 'Movie not found'
-      });
+      return next(new NotFoundError('Movie not found'));
     }
     
     res.status(200).json({
@@ -77,57 +64,37 @@ exports.getMovieById = async (req, res) => {
       data: movie
     });
   } catch (error) {
-    console.error('Error retrieving movie:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Server Error'
-    });
+    next(error);
   }
 };
 
-
-// controllers/movieController.js
 // Update a movie
-// Improved updateMovie controller with versioning
-exports.updateMovie = async (req, res) => {
+exports.updateMovie = async (req, res, next) => {
   try {
     const { title, year, watched } = req.body;
     
-    // First fetch the movie with its current version
-    const currentMovie = await Movie.findOne({
-      _id: req.params.id,
-      user: req.user.id
+    const currentMovie = await Movie.findOne({ 
+      _id: req.params.id, 
+      user: req.user.id 
     });
     
     if (!currentMovie) {
-      return res.status(404).json({
-        success: false,
-        error: 'Movie not found'
-      });
+      return next(new NotFoundError('Movie not found'));
     }
     
     // Update with version check
     const movie = await Movie.findOneAndUpdate(
       { 
-        _id: req.params.id,
-        user: req.user.id,
-        __v: currentMovie.__v // Ensure version match
+        _id: req.params.id, 
+        user: req.user.id, 
+        __v: currentMovie.__v 
       },
-      { 
-        $set: { title, year, watched }
-      },
-      { 
-        new: true,
-        runValidators: true
-      }
+      { $set: { title, year, watched } },
+      { new: true, runValidators: true }
     );
     
-    // If movie is null, it means the version changed during our operation
     if (!movie) {
-      return res.status(409).json({
-        success: false,
-        error: 'Conflict: The movie was modified by another request'
-      });
+      return next(new ConflictError('Conflict: The movie was modified by another request'));
     }
     
     res.status(200).json({
@@ -135,19 +102,27 @@ exports.updateMovie = async (req, res) => {
       data: movie
     });
   } catch (error) {
-    // Error handling same as before
-    console.error('Error updating movie:', error.message);
+    next(error);
+  }
+};
+
+// Delete a movie from watchlist
+exports.deleteMovie = async (req, res, next) => {
+  try {
+    const movie = await Movie.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user.id
+    });
     
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        success: false,
-        error: Object.values(error.errors).map(val => val.message).join(', ')
-      });
+    if (!movie) {
+      return next(new NotFoundError('Movie not found'));
     }
     
-    res.status(500).json({
-      success: false,
-      error: 'Server Error'
+    res.status(200).json({
+      success: true,
+      data: {}
     });
+  } catch (error) {
+    next(error);
   }
 };

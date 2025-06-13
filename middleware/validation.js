@@ -1,7 +1,9 @@
+// middleware/validation.js (modified)
 const Joi = require('joi');
 const mongoose = require('mongoose');
+const { BadRequestError, ValidationError } = require('../utils/errorHandler');
 
-// Movie validation schema (existing code)
+// Movie validation schema
 const movieSchema = Joi.object({
   title: Joi.string().trim().required().messages({
     'string.empty': 'Movie title is required',
@@ -22,7 +24,7 @@ const validateMovie = (req, res, next) => {
   
   if (error) {
     const errorMessage = error.details.map(detail => detail.message).join(', ');
-    return res.status(400).json({ error: errorMessage });
+    return next(new ValidationError(errorMessage));
   }
   
   next();
@@ -31,10 +33,7 @@ const validateMovie = (req, res, next) => {
 // Validate MongoDB ObjectID
 const validateObjectId = (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return res.status(400).json({
-      success: false,
-      error: 'Invalid ID format'
-    });
+    return next(new BadRequestError('Invalid ID format'));
   }
   next();
 };
