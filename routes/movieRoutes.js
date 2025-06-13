@@ -1,26 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  getMovies, 
-  getMovie, 
-  createMovie, 
-  updateMovie, 
-  deleteMovie 
-} = require('../controllers/movieController');
-const auth = require('../middleware/auth');
+const { validateMovie } = require('../middleware/validation');
+const { addMovie } = require('../controllers/movieController');
+const auth = require('../middleware/auth'); // Using our existing auth middleware
 
-// Protect all movie routes with auth middleware
-router.use(auth);
-
-// Get all movies & Create movie
-router.route('/')
-  .get(getMovies)
-  .post(createMovie);
-
-// Get, update, and delete movie by ID
-router.route('/:id')
-  .get(getMovie)
-  .put(updateMovie)
-  .delete(deleteMovie);
+// POST endpoint to add a new movie - protected with auth middleware
+router.post('/', auth, validateMovie, addMovie);
 
 module.exports = router;

@@ -6,36 +6,25 @@ const movieSchema = new mongoose.Schema({
     required: [true, 'Movie title is required'],
     trim: true
   },
-  genre: {
-    type: String,
-    required: [true, 'Genre is required'],
-    trim: true
-  },
-  description: {
-    type: String,
-    required: [true, 'Description is required']
-  },
-  releaseYear: {
-    type: Number
+  year: {
+    type: Number,
+    validate: {
+      validator: function(value) {
+        return !value || (value > 1888 && value <= new Date().getFullYear());
+      },
+      message: props => `${props.value} is not a valid release year!`
+    }
   },
   watched: {
     type: Boolean,
     default: false
-  },
-  rating: {
-    type: Number,
-    min: 1,
-    max: 10,
-    default: null
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   }
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
 const Movie = mongoose.model('Movie', movieSchema);
 

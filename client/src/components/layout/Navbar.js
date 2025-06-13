@@ -1,22 +1,19 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/auth/AuthContext';
 
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const onLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   const authLinks = (
     <>
+      <li className="welcome">Hello, {user && user.name}</li>
       <li><Link to="/dashboard">Dashboard</Link></li>
-      <li><Link to="/movies">Movies</Link></li>
-      <li><a onClick={onLogout}><i className="fas fa-sign-out-alt" /> Logout</a></li>
-      <li className="welcome-user">Welcome, {user?.name}</li>
+      <li>
+        <a onClick={logout} href="#!">
+          <i className="fas fa-sign-out-alt" /> <span>Logout</span>
+        </a>
+      </li>
     </>
   );
 
@@ -29,13 +26,12 @@ const Navbar = () => {
 
   return (
     <nav className="navbar">
-      <div className="navbar-container container">
-        <h1 className="navbar-logo"><Link to="/">Movie Watchlist</Link></h1>
-        <ul className="nav-menu">
-          <li><Link to="/">Home</Link></li>
-          {isAuthenticated ? authLinks : guestLinks}
-        </ul>
-      </div>
+      <h1>
+        <Link to="/">
+          <i className="fas fa-film" /> Movie Watchlist
+        </Link>
+      </h1>
+      <ul>{isAuthenticated ? authLinks : guestLinks}</ul>
     </nav>
   );
 };

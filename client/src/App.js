@@ -1,46 +1,35 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { AuthState } from './utils/authTest';
+import { AuthProvider } from './context/auth/AuthContext';
 
-// Layout
+// Components
 import Navbar from './components/layout/Navbar';
-
-// Pages
 import Home from './components/pages/Home';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import Dashboard from './components/pages/Dashboard';
-import NotFound from './components/pages/NotFound';
+import PrivateRoute from './components/routing/PrivateRoute';
 
-// Routing
-import PrivateRoute from './components/routing/ProtectedRoute';
-
-// Styles
+// CSS
 import './App.css';
 
 const App = () => (
   <AuthProvider>
-    {/* Outputs current auth context state to the console */}
-    <AuthState />
-
     <Router>
       <Navbar />
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+      <div className="container">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
 
-        {/* Protected routes */}
-        <Route element={<PrivateRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          {/* Add additional protected routes here */}
-        </Route>
-
-        {/* Catch-all */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          {/* Protected Routes */}
+          <Route element={<PrivateRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            {/* add other protected routes here */}
+          </Route>
+        </Routes>
+      </div>
     </Router>
   </AuthProvider>
 );

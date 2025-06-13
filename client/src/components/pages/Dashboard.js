@@ -1,33 +1,23 @@
-// client/src/components/dashboard/Dashboard.js
-
 import React from 'react';
-import { useAuth } from '../../context/AuthContext';
-import LogoutButton from '../auth/LogoutButton';
+import { useAuth } from '../../context/auth/AuthContext';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+
+  if (!user) return <div>Loading user data...</div>;
 
   return (
-    <div>
-      <div className="dashboard-header">
-        <h1>Dashboard</h1>
-        <LogoutButton />
+    <div className="dashboard">
+      <h1>Movie Watchlist Dashboard</h1>
+      <div className="user-info">
+        <h2>Welcome, {user.name}</h2>
+        <p>Email: {user.email}</p>
+        <p>Account created: {new Date(user.createdAt).toLocaleDateString()}</p>
       </div>
-
-      <div className="profile-header">
-        <div className="profile-avatar">
-          {user && user.name.charAt(0).toUpperCase()}
-        </div>
-        <div>
-          <h2>{user && user.name}</h2>
-          <p>{user && user.email}</p>
-        </div>
-      </div>
-
-      <div className="card">
-        <h3>My Watchlist</h3>
-        <p>You have 0 movies in your watchlist.</p>
-        <button>Add Movies</button>
+      <div className="dashboard-actions">
+        <button className="btn btn-secondary">View My Watchlist</button>
+        <button className="btn btn-secondary">Add New Movie</button>
+        <button className="btn btn-danger" onClick={logout}>Logout</button>
       </div>
     </div>
   );

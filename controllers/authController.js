@@ -63,13 +63,12 @@ exports.register = async (req, res) => {
   }
 };
 
-
 // Login user
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate input
+    // Basic validation
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -77,10 +76,8 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Find user by email
-    const user = await User.findOne({ email });
-    
     // Check if user exists
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -88,9 +85,8 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Check if password matches
+    // Verify password using the method from our User model
     const isMatch = await user.comparePassword(password);
-    
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -105,7 +101,7 @@ exports.login = async (req, res) => {
       { expiresIn: '30d' }
     );
 
-    // Return user data and token
+    // Return user info and token
     res.status(200).json({
       success: true,
       data: {
@@ -117,6 +113,7 @@ exports.login = async (req, res) => {
         token
       }
     });
+
   } catch (error) {
     console.error('Login error:', error.message);
     res.status(500).json({
