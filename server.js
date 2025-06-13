@@ -4,8 +4,7 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 // Add this to your existing server.js file
 const authRoutes = require('./routes/authRoutes');
-const movieRoutes = require('./routes/movieRoutes');;
-
+const movieRoutes = require('./routes/movieRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -32,11 +31,11 @@ const connectDB = async () => {
 
 connectDB();
 
+
 // Initialize middleware
 app.use(express.json()); // Body parser for JSON data
 app.use(express.urlencoded({ extended: false })); // Body parser for URL-encoded data
 app.use(cors()); // Enable CORS for all routes
-
 
 // Register routes
 app.use('/api/auth', authRoutes);
@@ -45,6 +44,7 @@ app.use('/api/movies', movieRoutes);
 // Basic route for testing
 app.get('/', (req, res) => {
   res.send('Movie Watchlist API is running');
+});  // ← closed the callback here
 
 // Set port and start server
 const PORT = process.env.PORT || 5000;

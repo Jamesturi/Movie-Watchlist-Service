@@ -35,3 +35,24 @@ exports.addMovie = async (req, res) => {
     });
   }
 };
+
+
+// Get all movies for the authenticated user
+exports.getMovies = async (req, res) => {
+  try {
+    // Find all movies that belong to the authenticated user
+    const movies = await Movie.find({ user: req.user.id }).sort({ createdAt: -1 });
+    
+    res.status(200).json({
+      success: true,
+      count: movies.length,
+      data: movies
+    });
+  } catch (error) {
+    console.error('Error retrieving movies:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Server Error'
+    });
+  }
+};
