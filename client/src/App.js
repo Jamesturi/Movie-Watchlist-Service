@@ -1,37 +1,37 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/auth/AuthContext';
+import { AuthProvider }        from './context/auth/AuthContext';
 
-// Components
-import Navbar from './components/layout/Navbar';
-import Home from './components/pages/Home';
-import Login from './components/auth/Login';
-import Register from './components/auth/Register';
-import Dashboard from './components/pages/Dashboard';
-import PrivateRoute from './components/routing/PrivateRoute';
+import Navbar                  from './components/layout/Navbar';
+import Home                    from './components/pages/Home';
+import Login                   from './components/auth/Login';
+import Register                from './components/auth/Register';
+import Dashboard               from './components/pages/Dashboard';
+import ApiDiagnostic           from './components/ApiDiagnostic';
+import PrivateRoute            from './components/routing/PrivateRoute';
 
-// CSS
 import './App.css';
 
-const App = () => (
-  <AuthProvider>
-    <Router>
-      <Navbar />
-      <div className="container">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
+export default function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <Navbar />
+        <div className="container">
+          <Routes>
+            {/* public */}
+            <Route path="/"        element={<Home />} />
+            <Route path="/login"   element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-          {/* Protected Routes */}
-          <Route element={<PrivateRoute />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            {/* add other protected routes here */}
-          </Route>
-        </Routes>
-      </div>
-    </Router>
-  </AuthProvider>
-);
-
-export default App;
+            {/* protected */}
+            <Route element={<PrivateRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/api-test"  element={<ApiDiagnostic />} />
+            </Route>
+          </Routes>
+        </div>
+      </Router>
+    </AuthProvider>
+  );
+}

@@ -7,6 +7,7 @@ const {
   NotFoundError, 
   ValidationError 
 } = require('../utils/errorHandler');
+const auth = require('../middleware/auth');
 
 // Test route that throws a synchronous error
 router.get('/sync-error', (req, res) => {
@@ -51,5 +52,24 @@ router.get('/unhandled-rejection', (req, res) => {
   // This line won't execute due to the unhandled rejection
   res.status(200).json({ success: true });
 });
+// Public test endpoint that doesn't require authentication
+router.get('/public', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Public API is working correctly',
+    cors: 'Enabled',
+    timestamp: new Date().toISOString()
+  });
+});
 
+// Add an endpoint to check auth headers
+router.get('/auth-check', auth, (req, res) => {
+  // This route will only succeed if auth middleware passes
+  res.status(200).json({
+    success: true,
+    message: 'Authentication is working correctly',
+    user: req.user.id,
+    timestamp: new Date().toISOString()
+  });
+});
 module.exports = router;

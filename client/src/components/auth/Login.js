@@ -1,106 +1,93 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/auth/AuthContext';
+import { useNavigate }        from 'react-router-dom';
+import { useAuth }            from '../../context/auth/AuthContext';
 
-const Login = () => {
-  const [user, setUser] = useState({ email: '', password: '' });
-  const [formErrors, setFormErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export default function Login() {
+  const [form,       setForm]       = useState({ email:'', password:'' });
+  const [errors,     setErrors]     = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
   const { login, error, clearErrors, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isAuthenticated) navigate('/dashboard');
-    // eslint-disable-next-line
-  }, [isAuthenticated]);
-
+  // show errors from context
   useEffect(() => {
     if (error) {
-      setFormErrors({ general: error });
-      setIsSubmitting(false);
+      setErrors({ general:error });
+      setSubmitting(false);
     }
-    return () => error && clearErrors();
-    // eslint-disable-next-line
-  }, [error]);
+    return () => clearErrors();
+  }, [error, clearErrors]);
 
-  const validateForm = () => {
-    const errors = {};
-    let valid = true;
-
-    if (!user.email.trim()) {
-      errors.email = 'Email is required';
-      valid = false;
-    } else if (!/\S+@\S+\.\S+/.test(user.email)) {
-      errors.email = 'Email is invalid';
-      valid = false;
+  // if we’re already logged in, can go straight to dashboard
+  useEffect(() => {
+    if (!submitting && isAuthenticated) {
+      console.log('[Login] already authenticated → navigate');
+      navigate('/dashboard', { replace:true });
     }
+  }, [isAuthenticated, submitting, navigate]);
 
-    if (!user.password) {
-      errors.password = 'Password is required';
-      valid = false;
-    }
-
-    setFormErrors(errors);
-    return valid;
+  const validate = () => {
+    const errs = {};
+    if (!form.email) errs.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = 'Email is invalid';
+    if (!form.password) errs.password = 'Password is required';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   };
 
   const onChange = e => {
-    setUser({ ...user, [e.target.name]: e.target.value });
-    if (formErrors[e.target.name]) {
-      setFormErrors({ ...formErrors, [e.target.name]: null });
-    }
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+    if (errors[e.target.name]) setErrors(e => ({ ...e, [e.target.name]:null }));
   };
 
   const onSubmit = async e => {
     e.preventDefault();
-    if (!validateForm()) return;
+    console.log('[Login] handleSubmit');
+    if (!validate()) return;
 
-    setIsSubmitting(true);
+    setSubmitting(true);
+    console.log('[Login] calling login()...');
     try {
-      await login(user);
+      await login(form);
+      console.log('[Login] login() resolved → nav to /dashboard');
+      navigate('/dashboard', { replace:true });
     } catch {
-      setIsSubmitting(false);
+      // error useEffect will clear submitting
     }
   };
 
   return (
     <div className="form-container">
-      <h1>
-        Account <span>Login</span>
-      </h1>
+      <h1>Account <span>Login</span></h1>
       <form onSubmit={onSubmit}>
-        {formErrors.general && <div className="alert alert-danger">{formErrors.general}</div>}
+        {errors.general && <div className="alert alert-danger">{errors.general}</div>}
         <div className="form-group">
-          <label htmlFor="email">Email Address</label>
+          <label>Email</label>
           <input
-            id="email"
-            type="email"
             name="email"
-            value={user.email}
+            type="email"
+            value={form.email}
             onChange={onChange}
-            className={formErrors.email ? 'is-invalid' : ''}
+            className={errors.email?'is-invalid':''}
           />
-          {formErrors.email && <div className="invalid-feedback">{formErrors.email}</div>}
+          {errors.email && <div className="invalid-feedback">{errors.email}</div>}
         </div>
         <div className="form-group">
-          <label htmlFor="password">Password</label>
+          <label>Password</label>
           <input
-            id="password"
-            type="password"
             name="password"
-            value={user.password}
+            type="password"
+            value={form.password}
             onChange={onChange}
-            className={formErrors.password ? 'is-invalid' : ''}
+            className={errors.password?'is-invalid':''}
           />
-          {formErrors.password && <div className="invalid-feedback">{formErrors.password}</div>}
+          {errors.password && <div className="invalid-feedback">{errors.password}</div>}
         </div>
-        <button className="btn btn-primary" disabled={isSubmitting}>
-          {isSubmitting ? 'Logging in...' : 'Login'}
+        <button type="submit" disabled={submitting} className="btn btn-primary">
+          {submitting ? 'Logging in…' : 'Login'}
         </button>
       </form>
     </div>
   );
-};
-
-export default Login;
+}

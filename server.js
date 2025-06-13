@@ -4,48 +4,69 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const errorMiddleware = require('./middleware/errorMiddleware');
-const { NotFoundError } = require('./utils/errorHandler');
 // server.js (add near the top with other middleware)
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const helmet = require('helmet')
 
 const rateLimit = require('express-rate-limit');
+// Routes
+const authRoutes = require('./routes/authRoutes');
+const movieRoutes = require('./routes/movieRoutes');
+const testRoutes = require('./routes/testRoutes'); // New test routes
+
+
+
 
 // Create Express app
 const app = express();
 // Load environment variables
 dotenv.config();
 
-// Connect to MongoDB
-// const connectDB = async () => {
-//   try {
-//     // Remove deprecated options
-//     await mongoose.connect(process.env.MONGO_URI, {
-//       useNewUrlParser: true,
-//       useUnifiedTopology: true
-//       // Removed deprecated options: useCreateIndex, useFindAndModify
-//     });
-//     console.log('MongoDB connected successfully');
-//   } catch (error) {
-//     console.error('MongoDB connection error:', error.message);
-//     // Exit process with failure
-//     process.exit(1);
-//   }
-// };
-
 connectDB();
 
+
+// const cors = require('cors');
+
+// CORS configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Define whitelist
+    const whitelist = [
+      'http://localhost:3000',
+      'https://moviewatchlist.com',
+      'https://www.moviewatchlist.com'
+    ];
+    
+    // Check if origin is allowed
+    if (whitelist.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Total-Count'],
+  credentials: false, // Set to true if using cookies
+  maxAge: 86400, // Cache preflight response for 24 hours
+};
+
+// Apply CORS middleware with options
+app.use(cors(corsOptions));
+
+// // Handle preflight OPTIONS requests explicitly
+// app.options('*', cors(corsOptions));
 
 
 // Middleware
 app.use(express.json());
-app.use(cors());
 
-// Routes
-const authRoutes = require('./routes/authRoutes');
-const movieRoutes = require('./routes/movieRoutes');
-const testRoutes = require('./routes/testRoutes'); // New test routes
+
+
 
 // Mount routes
 app.use('/api/auth', authRoutes);
