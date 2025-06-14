@@ -1,0 +1,20 @@
+[
+  {
+    "_id": "60d21b4667d0d8992e610c85",
+    "title": "The Shawshank Redemption",
+    "year": 1994,
+    "watched": false,
+    "user": "60d21b4667d0d8992e610c80",
+    "createdAt": "2023-10-01T12:00:00.000Z",
+    "updatedAt": "2023-10-01T12:00:00.000Z"
+  },
+  {
+    "_id": "60d21b4667d0d8992e610c86",
+    "title": "The Godfather",
+    "year": 1972,
+    "watched": true,
+    "user": "60d21b4667d0d8992e610c80",
+    "createdAt": "2023-10-02T12:00:00.000Z",
+    "updatedAt": "2023-10-02T12:00:00.000Z"
+  }
+]

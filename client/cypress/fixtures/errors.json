@@ -1,0 +1,19 @@
+{
+  "validation": {
+    "title": "Movie title is required",
+    "year": "Year must be a number",
+    "yearRange": "Year must be at least 1888",
+    "yearFuture": "Year cannot be more than 2030"
+  },
+  "auth": {
+    "unauthorized": "Unauthorized access. Please log in again.",
+    "forbidden": "You do not have permission to access this resource"
+  },
+  "notFound": {
+    "movie": "Movie not found"
+  },
+  "server": {
+    "generic": "Something went wrong on the server",
+    "conflict": "Conflict: The movie was modified by another request"
+  }
+}
