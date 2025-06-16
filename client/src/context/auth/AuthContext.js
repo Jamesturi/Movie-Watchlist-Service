@@ -1,104 +1,87 @@
-// client/src/context/auth/AuthContext.js
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback
-} from 'react';
-import api from '../../utils/api';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import axios from '../../utils/api'; // adjust this if your api file is elsewhere
+import { useError } from '../ErrorContext';  // import ErrorContext for global error handling
 
 const AuthContext = createContext();
+
 export const useAuth = () => useContext(AuthContext);
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+export const AuthProvider = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { showError } = useError();
 
-  const clearErrors = useCallback(() => setError(null), []);
-
+  // Check user authentication on app load
   useEffect(() => {
-    const initAuth = () => {
+    const checkLoggedIn = async () => {
       try {
-        const rawUser = localStorage.getItem('user');
         const token = localStorage.getItem('token');
-        console.log('[AuthContext:init]', { rawUser, token });
-        if (token && rawUser && rawUser !== 'undefined' && rawUser !== 'null') {
-          setUser(JSON.parse(rawUser));
+        if (token) {
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          const res = await axios.get('/api/auth/user');
+          const user = res.data?.data?.user || res.data?.user;
+          setCurrentUser(user);
         }
-      } catch (e) {
-        console.error('Auth init error', e);
-        localStorage.removeItem('user');
+      } catch (err) {
         localStorage.removeItem('token');
+        delete axios.defaults.headers.common['Authorization'];
       } finally {
         setLoading(false);
       }
     };
-    initAuth();
+    checkLoggedIn();
   }, []);
 
-  const register = useCallback(async (userData) => {
-    setLoading(true);
-    setError(null);
+  // Register new user
+  const register = useCallback(async (name, email, password) => {
     try {
-      const response = await api.post('/api/auth/register', userData);
-      // API returns { success, data: { token, user } }
-      const { token, user: registeredUser } = response.data.data;
+      const res = await axios.post('/api/auth/register', { name, email, password });
+
+      const { data: { token, user } } = res.data;
+      console.log("My token  is"+ token);
 
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(registeredUser));
-      setUser(registeredUser);
-      return response.data;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      setCurrentUser(user);
+      return user;
     } catch (err) {
-      setError(err.response?.data?.message || err.message);
+      showError(err.response?.data?.message || 'Registration failed. Please try again.');
       throw err;
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  }, [showError]);
 
-  const login = useCallback(async (creds) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await api.post('/api/auth/login', creds);
-      // API returns { success, data: { token, user } }
-      const { token, user: loggedInUser } = response.data.data;
+const login = useCallback(async (email, password) => {
+  try {
+    const res = await axios.post('/api/auth/login', { email, password });
 
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(loggedInUser));
-      setUser(loggedInUser);
-      return response.data;
-    } catch (err) {
-      setError(err.response?.data?.message || 'Invalid credentials');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    const { data: { token, user } } = res.data;
 
+    localStorage.setItem('token', token);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    setCurrentUser(user);
+    return user;
+  } catch (err) {
+    showError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+    throw err;
+  }
+}, [showError]);
+
+
+  // Logout user
   const logout = useCallback(() => {
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    window.location.href = '/login';
+    delete axios.defaults.headers.common['Authorization'];
+    setCurrentUser(null);
   }, []);
 
+  const isAuthenticated = !!currentUser;
+
+  const value = { currentUser, loading, isAuthenticated, register, login, logout };
+
   return (
-    <AuthContext.Provider value={{
-      user,
-      loading,
-      error,
-      register,
-      login,
-      logout,
-      clearErrors,
-      isAuthenticated: !!user
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-}
-
-export default AuthContext;
+};

@@ -29,6 +29,7 @@ const AddMovie = () => {
 
     try {
       await api.post('/api/movies', movie);
+      console.log("................... "+movie+" .................................");
       navigate('/movies');
     } catch (error) {
       if (error.response && error.response.status === 422) {

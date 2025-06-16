@@ -9,7 +9,7 @@ const Navbar = () => {
     <>
       <li className="welcome">Hello, {user && user.name}</li>
       <li><Link to="/dashboard">Dashboard</Link></li>
-       <li><Link to="/api-test">api-test</Link></li>
+       {/* <li><Link to="/api-test">api-test</Link></li> */}
       <li>
         <a onClick={logout} href="#!">
           <i className="fas fa-sign-out-alt" /> <span>Logout</span>

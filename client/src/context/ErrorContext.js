@@ -1,4 +1,3 @@
-// client/src/context/ErrorContext.js
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import ErrorMessage from '../components/ErrorMessage';
 
@@ -21,7 +20,7 @@ export const ErrorProvider = ({ children }) => {
       <ErrorMessage
         error={error}
         onDismiss={clearError}
-        timeout={5000} // Auto-dismiss after 5 seconds
+        timeout={5000} 
       />
     </ErrorContext.Provider>
   );
